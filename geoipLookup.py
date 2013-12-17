@@ -8,7 +8,7 @@ gio = pygeoip.GeoIP('GeoIPOrg.dat')
 
 resultColumns = ['ip', 'org', 'region_name', 'city', 'postal_code', 'country_code', 'country_code3', 'country_name', 'area_code', 'metro_code', 'latitude', 'longitude']
 
-sys.stdout.write('|'.join(resultColumns))
+sys.stdout.write('|'.join(resultColumns) + '\n')
 
 for ip in sys.stdin.readlines():
 
