@@ -13,4 +13,4 @@ where ips.txt is a text file containing a list of IP addresses. The output looks
   192.168.1.1|||||||||||
   79.74.74.12|Tiscali UK Limited|K2|Abingdon||GB|GBR|United Kingdom|0|None|51.6667|-1.2833
 
-The pipe-delimited results can then easily be loaded into MySQL. The API calls to the binary database files are *much* faster than loading GeoIP lookup data into database tables.
+The pipe-delimited results can then easily be loaded into MySQL. The API calls to the binary database files are *much* faster than loading GeoIP lookup data into database tables and querying against them.
