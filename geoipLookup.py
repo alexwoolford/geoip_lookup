@@ -5,19 +5,23 @@ from collections import defaultdict
 
 gic = pygeoip.GeoIP('GeoIPCity.dat')
 gio = pygeoip.GeoIP('GeoIPOrg.dat')
+gi = pygeoip.GeoIP('GeoIPISP.dat')
 
-resultColumns = ['ip', 'org', 'region_name', 'city', 'postal_code', 'country_code', 'country_code3', 'country_name', 'area_code', 'metro_code', 'latitude', 'longitude']
+resultColumns = ['ip', 'org', 'isp', 'region_name', 'city', 'postal_code', 'country_code', 'country_code3', 'country_name', 'area_code', 'metro_code', 'latitude', 'longitude']
 
 sys.stdout.write('|'.join(resultColumns) + '\n')
 
 for ip in sys.stdin.readlines():
 
     ip = ip.strip()
-
     org = gio.org_by_addr(ip)
+    isp = gi.org_by_addr(ip)
 
     if org == None:
         org = unicode('')
+
+    if isp == None:
+        isp = unicode('')
 
     locationResult = gic.record_by_addr(ip)
 
@@ -36,8 +40,8 @@ for ip in sys.stdin.readlines():
             print sys.exc_info()
 
     resultDict['ip'] = ip    
-
     resultDict['org'] = org
+    resultDict['isp'] = isp
 
     result = []
 
