@@ -20,7 +20,7 @@ with open(args.ip_address_whitelist_file) as ip_address_whitelist_file:
         ip = line.strip()
         whitelist.add(ip)
 
-successful_lookups = 0
+attempted_lookups = 0
 failed_lookups = 0
 
 failed_lookup_ips = list()
@@ -64,10 +64,11 @@ with open(args.ip_address_file) as ip_address_file:
 
         record = {'ip': ip, 'city': city, 'subdivision': subdivision, 'country': country, 'whitelisted': whitelisted, 'lookup_failed': lookup_failed}
         ip_lookup_list.append(record)
-        successful_lookups += 1
+        attempted_lookups += 1
 
+successful_lookups = attempted_lookups - failed_lookups
 
-sys.stdout.write("successful lookups: {0}; failed lookups: {1}".format(successful_lookups, failed_lookups) + "\n")
+sys.stdout.write("attempted lookups: {0}; successful lookups: {1}; failed lookups: {2}".format(attempted_lookups, successful_lookups, failed_lookups) + "\n")
 sys.stdout.write("results output to {0}".format(args.output_csv))
 
 dataframe = pd.DataFrame(ip_lookup_list, columns=['ip', 'city', 'subdivision', 'country', 'whitelisted', 'lookup_failed'])
