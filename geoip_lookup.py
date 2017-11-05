@@ -1,51 +1,76 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+import argparse
+import geoip2.database
+import pandas as pd
 import sys
-import pygeoip
-from collections import defaultdict
 
-gic = pygeoip.GeoIP('GeoIPCity.dat')
-gio = pygeoip.GeoIP('GeoIPOrg.dat')
-gi = pygeoip.GeoIP('GeoIPISP.dat')
+parser = argparse.ArgumentParser(description='Geolocate IP addresses')
+parser.add_argument('--ip-address-file', dest='ip_address_file', action='store', help='file containing a IP addresses to lookup')
+parser.add_argument('--ip-address-whitelist-file', dest='ip_address_whitelist_file', action='store', help='file whitelisted IP addresses')
+parser.add_argument('--maxmind-db', dest='maxmind_db', action='store', help='Maxmind database file')
+parser.add_argument('--output-csv', dest='output_csv', action='store', help='output CSV file')
+args = parser.parse_args()
 
-resultColumns = ['ip', 'org', 'isp', 'region_name', 'city', 'postal_code', 'country_code', 'country_code3', 'country_name', 'area_code', 'metro_code', 'latitude', 'longitude']
+reader = geoip2.database.Reader(args.maxmind_db)
 
-sys.stdout.write('|'.join(resultColumns) + '\n')
+whitelist = set()
+with open(args.ip_address_whitelist_file) as ip_address_whitelist_file:
+    for line in ip_address_whitelist_file:
+        ip = line.strip()
+        whitelist.add(ip)
 
-for ip in sys.stdin.readlines():
+successful_lookups = 0
+failed_lookups = 0
 
-    ip = ip.strip()
-    org = gio.org_by_addr(ip)
-    isp = gi.org_by_addr(ip)
+failed_lookup_ips = list()
 
-    if org == None:
-        org = unicode('')
+ip_lookup_list = list()
+with open(args.ip_address_file) as ip_address_file:
 
-    if isp == None:
-        isp = unicode('')
+    for line in ip_address_file:
 
-    locationResult = gic.record_by_addr(ip)
-
-    if locationResult == None:
-        locationResult = {}        
-
-    resultDict = defaultdict(unicode)
-
-    for locationColumn in resultColumns:
-        resultDict[locationColumn] = ''
         try:
-            if locationColumn in locationResult:
-                resultDict[locationColumn] = unicode(locationResult[locationColumn])
+            ip = line.strip()
         except:
-            print locationResult
-            print sys.exc_info()
+            ip = None
 
-    resultDict['ip'] = ip    
-    resultDict['org'] = org
-    resultDict['isp'] = isp
+        lookup_failed = False
+        response = None
+        try:
+            response = reader.city(ip)
+        except:
+            lookup_failed = True
+            failed_lookups += 1
 
-    result = []
+        try:
+            city = response.city.name.encode('utf8')
+        except:
+            city = None
 
-    for resultColumn in resultColumns:
-        result.append(resultDict[resultColumn])
+        try:
+            subdivision = response.subdivisions.most_specific.name.encode('utf8')
+        except:
+            subdivision = None
 
-    sys.stdout.write('|'.join(result).encode('utf-8') + '\n')
+        try:
+            country = response.country.name.encode('utf8')
+        except:
+            country = None
+
+        whitelisted = False
+        if ip in whitelist:
+            whitelisted = True
+
+        record = {'ip': ip, 'city': city, 'subdivision': subdivision, 'country': country, 'whitelisted': whitelisted, 'lookup_failed': lookup_failed}
+        ip_lookup_list.append(record)
+        successful_lookups += 1
+
+
+sys.stdout.write("successful lookups: {0}; failed lookups: {1}".format(successful_lookups, failed_lookups) + "\n")
+sys.stdout.write("results output to {0}".format(args.output_csv))
+
+dataframe = pd.DataFrame(ip_lookup_list, columns=['ip', 'city', 'subdivision', 'country', 'whitelisted', 'lookup_failed'])
+
+dataframe.to_csv(args.output_csv, header=True, index=False, encoding='utf-8')
+

@@ -1,0 +1,7 @@
+*.pyc
+*.iml
+.idea/
+GeoIP2-City.mmdb
+ip_addresses.txt
+ip_whitelist.txt
+results.csv
